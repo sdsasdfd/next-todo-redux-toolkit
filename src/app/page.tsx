@@ -1,103 +1,275 @@
-import Image from "next/image";
+"use client";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Form, FormField, FormItem, FormMessage } from "@/components/ui/form";
+import { RootState } from "@/lib/store/store";
+import React, { useEffect, useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { z } from "zod";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import {
+  addTodo,
+  createTodo,
+  deleteTodo,
+  editTodo,
+  fetchTodos,
+  MarkCompleteTodo,
+  selectError,
+  selectLoading,
+  selectTodos,
+  Todo,
+} from "@/lib/store/features/todoSlice";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
-export default function Home() {
+import { TableOfContents } from "lucide-react";
+import { useAppDispatch, useAppSelector } from "@/lib/store/hooks";
+
+const formSchema = z.object({
+  title: z.string().min(1, { message: "Title is required" }),
+});
+
+const Page = () => {
+  const [editingTodoId, setEditingTodoId] = useState<string | null>(null);
+  const [isEditing, setIsEditing] = useState<boolean>(false);
+  const [editedTitle, setEditTitle] = useState<string>("");
+  // const { todos } = useSelector((state: RootState) => state.todo);
+  const dispatch = useAppDispatch();
+  const todos = useAppSelector(selectTodos);
+  const loading = useAppSelector(selectLoading);
+  const error = useAppSelector(selectError);
+  console.log("Todos", todos);
+
+  useEffect(() => {
+    dispatch(fetchTodos());
+  }, [dispatch]);
+
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      title: "",
+    },
+  });
+
+  const onSubmit = (values: z.infer<typeof formSchema>) => {
+    if (isEditing) {
+      if (editingTodoId !== null) {
+        dispatch(editTodo({ id: editingTodoId, title: values.title }));
+        setIsEditing(false);
+        setEditingTodoId(null);
+      }
+      setEditTitle("");
+    } else {
+      // const newTodo = {
+      //   id: Date.now(),
+      //   title: values.title,
+      //   completed: false,
+      // };
+      dispatch(createTodo(values.title));
+    }
+    form.reset();
+  };
+
+  useEffect(() => {
+    form.reset({ title: editedTitle });
+  }, [editedTitle]);
+
   return (
-    <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="font-mono list-inside list-decimal text-sm/6 text-center sm:text-left">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] font-mono font-semibold px-1 py-0.5 rounded">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+    <div className="max-w-7xl mx-auto p-4 space-y-2">
+      <Card className=" mt-5">
+        <CardHeader className=" flex items-center justify-center">
+          <CardTitle className="text-2xl text-cyan-400">
+            Redux ToolKit Todo
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Form {...form}>
+            <form
+              className=" flex items-center gap-2 justify-center"
+              onSubmit={form.handleSubmit(onSubmit)}
+            >
+              <FormField
+                control={form.control}
+                name="title"
+                render={({ field }) => (
+                  <FormItem>
+                    <Input
+                      placeholder="Enter Title"
+                      {...field}
+                      className=" w-[300px]"
+                    />
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              {!isEditing ? (
+                <Button
+                  type="submit"
+                  variant={"ghost"}
+                  className=" border cursor-pointer hover:bg-transparent border-cyan-400 text-cyan-600 hover:text-cyan-600"
+                >
+                  Submit
+                </Button>
+              ) : (
+                <>
+                  <Button
+                    type="button"
+                    variant={"ghost"}
+                    onClick={() => {
+                      setIsEditing(false);
+                      setEditTitle("");
+                    }}
+                    className=" border cursor-pointer hover:bg-transparent border-cyan-400 text-cyan-600 hover:text-cyan-600"
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    type="submit"
+                    variant={"ghost"}
+                    className=" border cursor-pointer hover:bg-transparent border-cyan-400 text-cyan-600 hover:text-cyan-600"
+                  >
+                    Update
+                  </Button>
+                </>
+              )}
+            </form>
+          </Form>
+          <div className=" mt-5 flex gap-4 flex-wrap">
+            {loading ? (
+              <div>Loading...</div>
+            ) : (
+              todos?.map((todo: Todo) => (
+                <div
+                  className={` border w-[250px] flex items-center justify-between p-2 rounded-md ${
+                    todo.completed
+                      ? "bg-green-200 hover:bg-green-200"
+                      : "bg-gray-50 hover:bg-gray-200"
+                  } `}
+                  key={todo.id}
+                >
+                  <div className=" flex justify-between items-center w-full">
+                    <p>{todo.title}</p>
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
-        </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger className=" cursor-pointer">
+                        <TableOfContents />
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent>
+                        {todo.completed === false && (
+                          <DropdownMenuItem
+                            onClick={() => {
+                              setIsEditing(true);
+                              setEditingTodoId(todo.id);
+                              setEditTitle(todo.title);
+                            }}
+                            disabled={isEditing}
+                          >
+                            Edit
+                          </DropdownMenuItem>
+                        )}
+                        {todo.completed ? (
+                          <DropdownMenuItem
+                            onClick={() => dispatch(MarkCompleteTodo(todo.id))}
+                          >
+                            Mark as Incomplete
+                          </DropdownMenuItem>
+                        ) : (
+                          <DropdownMenuItem
+                            onClick={() => dispatch(MarkCompleteTodo(todo.id))}
+                            disabled={isEditing}
+                          >
+                            Mark as Complete
+                          </DropdownMenuItem>
+                        )}
+                        <DropdownMenuItem
+                          onClick={() => {
+                            dispatch(deleteTodo(todo.id));
+                            form.reset({ title: "" });
+                            setIsEditing(false);
+                          }}
+                        >
+                          Delete
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
+                  {/* {editingTodoId !== todo.id ? (
+                    <div className=" flex justify-between items-center w-full">
+                      <p>{todo.title}</p>
+
+                      <DropdownMenu>
+                        <DropdownMenuTrigger className=" cursor-pointer">
+                          <TableOfContents />
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent>
+                          {todo.completed === false && (
+                            <DropdownMenuItem
+                              onClick={() => {
+                                setEditingTodoId(todo.id);
+                                setEditTitle(todo.title);
+                              }}
+                            >
+                              Edit
+                            </DropdownMenuItem>
+                          )}
+                          {todo.completed ? (
+                            <DropdownMenuItem
+                              onClick={() =>
+                                dispatch(MarkCompleteTodo(todo.id))
+                              }
+                            >
+                              Mark as Incomplete
+                            </DropdownMenuItem>
+                          ) : (
+                            <DropdownMenuItem
+                              onClick={() =>
+                                dispatch(MarkCompleteTodo(todo.id))
+                              }
+                            >
+                              Mark as Complete
+                            </DropdownMenuItem>
+                          )}
+                          <DropdownMenuItem
+                            onClick={() => dispatch(deleteTodo(todo.id))}
+                          >
+                            Delete
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
+                  ) : (
+                    <>
+                      <Input
+                        value={editedTitle}
+                        onChange={(e) => setEditTitle(e.target.value)}
+                      />
+                      <Button
+                        onClick={() => {
+                          setEditingTodoId(null);
+                          dispatch(
+                            editTodo({ id: todo.id, title: editedTitle })
+                          );
+                        }}
+                      >
+                        Save
+                      </Button>
+                    </>
+                  )} */}
+                </div>
+              ))
+            )}
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
-}
+};
+
+export default Page;
