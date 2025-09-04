@@ -1,3 +1,4 @@
+
 "use client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormField, FormItem, FormMessage } from "@/components/ui/form";
@@ -31,12 +32,13 @@ import {
 
 import { TableOfContents } from "lucide-react";
 import { useAppDispatch, useAppSelector } from "@/lib/store/hooks";
+import Navbar from "@/components/Navbar";
 
 const formSchema = z.object({
   title: z.string().min(1, { message: "Title is required" }),
 });
 
-const Page = () => {
+const UserDashboard = () => {
   const [editingTodoId, setEditingTodoId] = useState<string | null>(null);
   const [isEditing, setIsEditing] = useState<boolean>(false);
   const [editedTitle, setEditTitle] = useState<string>("");
@@ -82,125 +84,131 @@ const Page = () => {
   }, [editedTitle]);
 
   return (
-    <div className="max-w-7xl mx-auto p-4 space-y-2">
-      <Card className=" mt-5">
-        <CardHeader className=" flex items-center justify-center">
-          <CardTitle className="text-2xl text-cyan-400">
-            Redux ToolKit Todo
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Form {...form}>
-            <form
-              className=" flex items-center gap-2 justify-center"
-              onSubmit={form.handleSubmit(onSubmit)}
-            >
-              <FormField
-                control={form.control}
-                name="title"
-                render={({ field }) => (
-                  <FormItem>
-                    <Input
-                      placeholder="Enter Title"
-                      {...field}
-                      className=" w-[300px]"
-                    />
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              {!isEditing ? (
-                <Button
-                  type="submit"
-                  variant={"ghost"}
-                  className=" border cursor-pointer hover:bg-transparent border-cyan-400 text-cyan-600 hover:text-cyan-600"
-                >
-                  Submit
-                </Button>
-              ) : (
-                <>
-                  <Button
-                    type="button"
-                    variant={"ghost"}
-                    onClick={() => {
-                      setIsEditing(false);
-                      setEditTitle("");
-                    }}
-                    className=" border cursor-pointer hover:bg-transparent border-cyan-400 text-cyan-600 hover:text-cyan-600"
-                  >
-                    Cancel
-                  </Button>
+    <div>
+     
+      <div className="max-w-7xl mx-auto p-4 space-y-2">
+        <Card className=" mt-5">
+          <CardHeader className=" flex items-center justify-center">
+            <CardTitle className="text-2xl text-cyan-400">
+              Redux ToolKit Todo
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Form {...form}>
+              <form
+                className=" flex items-center gap-2 justify-center"
+                onSubmit={form.handleSubmit(onSubmit)}
+              >
+                <FormField
+                  control={form.control}
+                  name="title"
+                  render={({ field }) => (
+                    <FormItem>
+                      <Input
+                        placeholder="Enter Title"
+                        {...field}
+                        className=" w-[300px]"
+                      />
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                {!isEditing ? (
                   <Button
                     type="submit"
                     variant={"ghost"}
                     className=" border cursor-pointer hover:bg-transparent border-cyan-400 text-cyan-600 hover:text-cyan-600"
                   >
-                    Update
+                    Submit
                   </Button>
-                </>
-              )}
-            </form>
-          </Form>
-          <div className=" mt-5 flex gap-4 flex-wrap">
-            {loading ? (
-              <div>Loading...</div>
-            ) : (
-              todos?.map((todo: Todo) => (
-                <div
-                  className={` border w-[250px] flex items-center justify-between p-2 rounded-md ${
-                    todo.completed
-                      ? "bg-green-200 hover:bg-green-200"
-                      : "bg-gray-50 hover:bg-gray-200"
-                  } `}
-                  key={todo.id}
-                >
-                  <div className=" flex justify-between items-center w-full">
-                    <p>{todo.title}</p>
+                ) : (
+                  <>
+                    <Button
+                      type="button"
+                      variant={"ghost"}
+                      onClick={() => {
+                        setIsEditing(false);
+                        setEditTitle("");
+                      }}
+                      className=" border cursor-pointer hover:bg-transparent border-cyan-400 text-cyan-600 hover:text-cyan-600"
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      type="submit"
+                      variant={"ghost"}
+                      className=" border cursor-pointer hover:bg-transparent border-cyan-400 text-cyan-600 hover:text-cyan-600"
+                    >
+                      Update
+                    </Button>
+                  </>
+                )}
+              </form>
+            </Form>
+            <div className=" mt-5 flex gap-4 flex-wrap">
+              {loading ? (
+                <div>Loading...</div>
+              ) : (
+                todos?.map((todo: Todo) => (
+                  <div
+                    className={` border w-[250px] flex items-center justify-between p-2 rounded-md ${
+                      todo.completed
+                        ? "bg-green-200 hover:bg-green-200"
+                        : "bg-gray-50 hover:bg-gray-200"
+                    } `}
+                    key={todo.id}
+                  >
+                    <div className=" flex justify-between items-center w-full">
+                      <p>{todo.title}</p>
 
-                    <DropdownMenu>
-                      <DropdownMenuTrigger className=" cursor-pointer">
-                        <TableOfContents />
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent>
-                        {todo.completed === false && (
+                      <DropdownMenu>
+                        <DropdownMenuTrigger className=" cursor-pointer">
+                          <TableOfContents />
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent>
+                          {todo.completed === false && (
+                            <DropdownMenuItem
+                              onClick={() => {
+                                setIsEditing(true);
+                                setEditingTodoId(todo.id);
+                                setEditTitle(todo.title);
+                              }}
+                              disabled={isEditing}
+                            >
+                              Edit
+                            </DropdownMenuItem>
+                          )}
+                          {todo.completed ? (
+                            <DropdownMenuItem
+                              onClick={() =>
+                                dispatch(MarkCompleteTodo(todo.id))
+                              }
+                            >
+                              Mark as Incomplete
+                            </DropdownMenuItem>
+                          ) : (
+                            <DropdownMenuItem
+                              onClick={() =>
+                                dispatch(MarkCompleteTodo(todo.id))
+                              }
+                              disabled={isEditing}
+                            >
+                              Mark as Complete
+                            </DropdownMenuItem>
+                          )}
                           <DropdownMenuItem
                             onClick={() => {
-                              setIsEditing(true);
-                              setEditingTodoId(todo.id);
-                              setEditTitle(todo.title);
+                              dispatch(deleteTodo(todo.id));
+                              form.reset({ title: "" });
+                              setIsEditing(false);
                             }}
-                            disabled={isEditing}
                           >
-                            Edit
+                            Delete
                           </DropdownMenuItem>
-                        )}
-                        {todo.completed ? (
-                          <DropdownMenuItem
-                            onClick={() => dispatch(MarkCompleteTodo(todo.id))}
-                          >
-                            Mark as Incomplete
-                          </DropdownMenuItem>
-                        ) : (
-                          <DropdownMenuItem
-                            onClick={() => dispatch(MarkCompleteTodo(todo.id))}
-                            disabled={isEditing}
-                          >
-                            Mark as Complete
-                          </DropdownMenuItem>
-                        )}
-                        <DropdownMenuItem
-                          onClick={() => {
-                            dispatch(deleteTodo(todo.id));
-                            form.reset({ title: "" });
-                            setIsEditing(false);
-                          }}
-                        >
-                          Delete
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </div>
-                  {/* {editingTodoId !== todo.id ? (
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
+                    {/* {editingTodoId !== todo.id ? (
                     <div className=" flex justify-between items-center w-full">
                       <p>{todo.title}</p>
 
@@ -262,14 +270,24 @@ const Page = () => {
                       </Button>
                     </>
                   )} */}
-                </div>
-              ))
-            )}
-          </div>
-        </CardContent>
-      </Card>
+                  </div>
+                ))
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
+        
+      </div>
     </div>
   );
 };
 
-export default Page;
+export default UserDashboard
+
+
+
+// const Page = () => {
+
+
+// export default Page;
